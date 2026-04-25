@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>視覺基因產生器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== CSS 變數 ===== */
+    :root {
+      --bg: #f7f4ef;
+      --surface: #ffffff;
+      --border: #e8e2d9;
+      --text-primary: #1a1612;
+      --text-secondary: #6b6560;
+      --text-muted: #a09a93;
+      --accent: #c84b31;
+      --accent-light: #f5e8e5;
+      --style-color: #2d5a8e;
+      --style-bg: #edf2f8;
+      --subject-color: #3d7a5c;
+      --subject-bg: #edf5f1;
+      --scene-color: #7a4d8e;
+      --scene-bg: #f3edf8;
+      --challenge-color: #8e6b2d;
+      --challenge-bg: #f8f3ed;
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow: 0 2px 20px rgba(0,0,0,0.06);
+      --shadow-hover: 0 8px 32px rgba(0,0,0,0.12);
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ===== Reset ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 24px 16px 64px;
+      /* 細緻的紋理背景 */
+      background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+
+    /* ===== 頁首 ===== */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-top: 16px;
+    }
+
+    .header-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      background: var(--accent-light);
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(28px, 6vw, 48px);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    /* ===== 主容器 ===== */
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* ===== 抽籤按鈕 ===== */
+    .draw-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .btn-draw {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--text-primary);
+      color: #fff;
+      border: none;
+      border-radius: 100px;
+      padding: 18px 40px;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-draw::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-draw:hover::before { transform: scaleX(1); }
+    .btn-draw span { position: relative; z-index: 1; }
+
+    .btn-draw:hover {
+      box-shadow: 0 8px 24px rgba(200, 75, 49, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .btn-draw:active { transform: translateY(0); }
+
+    /* 骰子圖示動畫 */
+    .btn-draw .icon {
+      position: relative;
+      z-index: 1;
+      font-size: 20px;
+      transition: transform 0.4s;
+    }
+    .btn-draw:hover .icon { transform: rotate(180deg) scale(1.2); }
+
+    /* ===== 卡片區塊 ===== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* 每張卡片 */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-4px);
+    }
+
+    /* 卡片頂部色條 */
+    .card-header {
+      padding: 16px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .card-meta { flex: 1; }
+    .card-type {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .card-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    /* 樣式卡 */
+    .card--style .card-header { background: var(--style-bg); }
+    .card--style .card-icon { background: rgba(45, 90, 142, 0.15); }
+    .card--style .card-type { color: var(--style-color); }
+
+    /* 主體卡 */
+    .card--subject .card-header { background: var(--subject-bg); }
+    .card--subject .card-icon { background: rgba(61, 122, 92, 0.15); }
+    .card--subject .card-type { color: var(--subject-color); }
+
+    /* 場景卡 */
+    .card--scene .card-header { background: var(--scene-bg); }
+    .card--scene .card-icon { background: rgba(122, 77, 142, 0.15); }
+    .card--scene .card-type { color: var(--scene-color); }
+
+    /* 挑戰任務 */
+    .card--challenge .card-header { background: var(--challenge-bg); }
+    .card--challenge .card-icon { background: rgba(142, 107, 45, 0.15); }
+    .card--challenge .card-type { color: var(--challenge-color); }
+
+    /* 卡片內容 */
+    .card-body { padding: 20px; }
+
+    .card-result {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* 佔位文字 */
+    .card-result.placeholder {
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .card-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ===== 重抽單張按鈕 ===== */
+    .card-redraw {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-redraw {
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-redraw:hover {
+      color: var(--text-primary);
+      border-color: var(--text-primary);
+      background: var(--bg);
+    }
+
+    /* ===== 合併提示文字 ===== */
+    .result-summary {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transition: opacity 0.5s 0.5s;
+    }
+
+    .result-summary.visible { opacity: 1; }
+
+    .summary-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .summary-text {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.8;
+    }
+
+    .summary-text strong { color: var(--accent); }
+
+    /* ===== Footer ===== */
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== 洗牌動畫 ===== */
+    @keyframes cardFlip {
+      0% { transform: rotateY(90deg) scale(0.9); opacity: 0; }
+      60% { transform: rotateY(-8deg); }
+      100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+    }
+
+    .card.animating {
+      animation: cardFlip 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    /* ===== RWD ===== */
+    @media (max-width: 600px) {
+      .cards-grid { grid-template-columns: 1fr; }
+      .btn-draw { padding: 15px 30px; font-size: 15px; }
+      .card-result { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 頁首 -->
+  <header class="header">
+    <div class="header-tag">🎴 Creative Card Draw</div>
+    <h1>視覺基因產生器</h1>
+    <p>隨機抽出四張創作基因卡，<br/>讓靈感從未知的組合中誕生。</p>
+  </header>
+
+  <!-- 抽籤區 -->
+  <div class="draw-section">
+    <button class="btn-draw" id="drawBtn" onclick="drawAllCards()">
+      <span class="icon">🎲</span>
+      <span>開始抽籤</span>
+    </button>
+  </div>
+
+  <!-- 四張卡片 -->
+  <div class="cards-grid" id="cardsGrid">
+
+    <!-- 風格卡 -->
+    <div class="card card--style" id="card-style">
+      <div class="card-header">
+        <div class="card-icon">🎨</div>
+        <div class="card-meta">
+          <div class="card-type">風格卡</div>
+          <div class="card-label">視覺基調</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-result placeholder" id="result-style">點擊「開始抽籤」來抽出你的風格</div>
+        <div class="card-desc" id="desc-style" style="display:none"></div>
+        <div class="card-redraw" id="redraw-style" style="display:none">
+          <button class="btn-redraw" onclick="redrawCard('style')">↻ 重抽此張</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主體卡 -->
+    <div class="card card--subject" id="card-subject">
+      <div class="card-header">
+        <div class="card-icon">⭐</div>
+        <div class="card-meta">
+          <div class="card-type">主體卡</div>
+          <div class="card-label">畫面主角</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-result placeholder" id="result-subject">點擊「開始抽籤」來抽出你的主角</div>
+        <div class="card-desc" id="desc-subject" style="display:none"></div>
+        <div class="card-redraw" id="redraw-subject" style="display:none">
+          <button class="btn-redraw" onclick="redrawCard('subject')">↻ 重抽此張</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 場景卡 -->
+    <div class="card card--scene" id="card-scene">
+      <div class="card-header">
+        <div class="card-icon">🌆</div>
+        <div class="card-meta">
+          <div class="card-type">場景卡</div>
+          <div class="card-label">故事背景</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-result placeholder" id="result-scene">點擊「開始抽籤」來抽出你的場景</div>
+        <div class="card-desc" id="desc-scene" style="display:none"></div>
+        <div class="card-redraw" id="redraw-scene" style="display:none">
+          <button class="btn-redraw" onclick="redrawCard('scene')">↻ 重抽此張</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 挑戰任務 -->
+    <div class="card card--challenge" id="card-challenge">
+      <div class="card-header">
+        <div class="card-icon">🎯</div>
+        <div class="card-meta">
+          <div class="card-type">挑戰任務</div>
+          <div class="card-label">作品用途</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-result placeholder" id="result-challenge">點擊「開始抽籤」來抽出你的任務</div>
+        <div class="card-desc" id="desc-challenge" style="display:none"></div>
+        <div class="card-redraw" id="redraw-challenge" style="display:none">
+          <button class="btn-redraw" onclick="redrawCard('challenge')">↻ 重抽此張</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 組合摘要 -->
+  <div class="result-summary" id="resultSummary">
+    <div class="summary-title">📋 你的創作基因組合</div>
+    <div class="summary-text" id="summaryText">—</div>
+  </div>
+
+  <footer>視覺基因產生器 · 每次都是全新的創作起點</footer>
+
+</div>
+
+<script>
+// ============================================================
+// 卡牌資料庫 — 每個分類各 50 組
+// ============================================================
+
+const CARDS = {
+
+  // === 風格卡：50 組 ===
+  style: [
+    { name: '台式美學', desc: '大膽的紅綠對比、霓虹燈管、磁磚拼貼，像《大佛普拉斯》那種生猛的黑白層次。' },
+    { name: '港式復古', desc: '濃郁飽和度、窄巷老招牌，像王家衛《花樣年華》的煙霧繚繞感。' },
+    { name: '日系空靈', desc: '留白多、低對比、自然採光，像無印良品或《海街日記》的乾淨通透。' },
+    { name: '美式復古', desc: '50 年代公路感、老牌廣告顆粒感、美式漫畫筆觸。' },
+    { name: '賽博龐克', desc: '高對比藍紫色調、數位雜訊、全息投影、金屬質感。' },
+    { name: '現代優雅', desc: '莫蘭迪色調、大理石材質、簡潔線條、「貴氣」與「高級感」。' },
+    { name: '波西米亞', desc: '大地色系、手工質感、自由散漫的圖案疊加，散發自在氣息。' },
+    { name: '斯堪地那維亞', desc: '北歐木質調、黑白灰基底加上一抹溫柔色彩，功能即設計。' },
+    { name: '夢幻粉彩', desc: '馬卡龍配色、柔光散景、充滿糖果感的甜蜜構圖。' },
+    { name: '工業風格', desc: '裸露磚牆、鐵管燈具、粗獷金屬，黑與褐的力量美學。' },
+    { name: '侘寂美學', desc: '不完美的陶器、枯枝殘葉、時間留下的痕跡，接受無常之美。' },
+    { name: '孟斐斯設計', desc: '幾何圖形碰撞、撞色大膽、充滿節奏感的義大利 80 年代設計語言。' },
+    { name: '水墨寫意', desc: '暈染墨色、留白呼吸感、東方文人的輕盈筆意。' },
+    { name: '新古典主義', desc: '對稱構圖、柱式裝飾、金色線條，歷史感中帶著當代詮釋。' },
+    { name: '野獸派色彩', desc: '純色大塊面、不寫實的色彩運用、馬蒂斯式的奔放情感。' },
+    { name: '後現代拼貼', desc: '撕裂雜誌感、字型混排、打破規則的視覺層次。' },
+    { name: '洛可可繁花', desc: '蕾絲裝飾、捲草紋樣、粉金相間的奢靡精細感。' },
+    { name: '東南亞熱帶', desc: '鮮豔熱帶植物、藤編質感、午後陽光透過葉縫的光影。' },
+    { name: '新藝術主義', desc: '有機曲線、植物花卉紋樣、金色細線描邊，Art Nouveau 的優雅。' },
+    { name: '構成主義', desc: '紅黑幾何、對角線構圖、蘇俄先鋒派的革命性視覺語言。' },
+    { name: '低保真像素', desc: '16bit 遊戲美學、馬賽克色塊、懷舊電玩的數位溫柔。' },
+    { name: '超寫實主義', desc: '比照片還真實的細節描繪、毛孔皮膚光澤、令人屏息的精準。' },
+    { name: '表現主義', desc: '扭曲線條、強烈情緒、暗色調與誇張陰影，《吶喊》式的內心吶喊。' },
+    { name: '普普藝術', desc: '安迪沃荷式的重複影像、高彩度純色、大眾文化的反諷挪用。' },
+    { name: '東歐民俗', desc: '繁複幾何花紋、鮮豔刺繡感、節慶儀式的視覺能量。' },
+    { name: '法式優雅', desc: '米白亞麻、細腰線條、巴黎公寓窗邊的慵懶午後光線。' },
+    { name: '黑色電影', desc: '高反差黑白、斜射光線、威尼斯百葉窗的陰影線條。' },
+    { name: '浮世繪現代', desc: '日本木版畫的波浪線條現代重詮、平塗色面加上精細輪廓。' },
+    { name: '抽象表現', desc: '顏料潑濺、即興筆觸、波洛克式的動態能量。' },
+    { name: '包浩斯幾何', desc: '功能主義美學、基本形色、清晰網格與去裝飾的純粹設計。' },
+    { name: '賽博龐克 2.0', desc: '霓虹雨夜、廣告全息、亞洲漢字招牌與未來科技的混搭都市感。' },
+    { name: '地中海陽光', desc: '磚紅屋頂、深藍海色、白灰粉牆，充滿假期感的溫暖色溫。' },
+    { name: '科幻極簡', desc: '純白空間、單一光源、只有必要元素的未來時代設計語言。' },
+    { name: '洛城夕陽', desc: '橙粉漸層天空、椰子樹剪影、洛杉磯 80 年代的慵懶奢華感。' },
+    { name: '哥特暗黑', desc: '燭光搖曳、蕾絲陰影、哥德式尖塔與玫瑰窗的神祕氛圍。' },
+    { name: '街頭塗鴉', desc: '噴漆質感、粗獷字體、城市牆面的生猛反叛能量。' },
+    { name: '苔蘚系療癒', desc: '深淺綠意、濕潤苔蘚質感、雨後森林的安靜呼吸。' },
+    { name: '復古未來主義', desc: '60 年代太空競賽美學、銀色弧形造型、原子時代的樂觀幻想。' },
+    { name: '中東幾何', desc: '伊斯蘭幾何星型花紋、拱門剪影、金藍配色的繁複精妙。' },
+    { name: '蒸汽龐克', desc: '黃銅齒輪、蒸汽管線、維多利亞時代的機械奇想世界。' },
+    { name: '南美牆畫', desc: '大幅壁畫的飽和色彩、族群圖騰、墨西哥節慶的熱情視覺。' },
+    { name: '和式枯山水', desc: '耙紋細沙、頑石佇立、禪意留白中的極致靜謐。' },
+    { name: '英倫學院', desc: '深綠深藍、木質書架、皮革裝訂、牛津劍橋的知識氣息。' },
+    { name: '霓虹熱帶夜', desc: '棕櫚葉剪影疊上霓虹色塊，夜間泳池倒影的奇幻色彩。' },
+    { name: '水彩印象', desc: '溫柔暈染邊緣、不定型色塊、雨天窗玻璃上的模糊景色。' },
+    { name: '怪奇物語', desc: '80 年代電視雜訊感、懷舊螢光配色、恐怖與溫馨共存的奇妙平衡。' },
+    { name: '極地冰原', desc: '藍白冷色調、霜凍質感、北極光的流動色彩。' },
+    { name: '生物有機', desc: '細胞切面的有機曲線、章魚色素、生命顯微世界的奇幻紋理。' },
+    { name: '老台灣懷舊', desc: '泛黃照片色調、眷村紅磚、黑膠唱片封面那個年代的溫柔。' },
+    { name: '新媒體藝術', desc: '數位光場、感應互動的粒子流動、當代科技藝術的流體之美。' },
+  ],
+
+  // === 主體卡：50 組 ===
+  subject: [
+    { name: '一杯冒煙的熱拿鐵', desc: '上班族必備儀式感，拿鐵拉花中倒映出整個早晨。' },
+    { name: '一台打開的筆電', desc: '螢幕光映在臉上，深夜工作的孤獨與專注。' },
+    { name: '戴著耳機的貓', desc: '沉浸在自己世界裡、對外界充耳不聞的優雅漠然。' },
+    { name: '復古底片相機', desc: '時光捕捉器，每張底片都是一個被珍藏的瞬間。' },
+    { name: '載滿鮮花的腳踏車', desc: '花店小徑，每踩一圈都有花香飄散。' },
+    { name: '掛在窗邊的絲質洋裝', desc: '風輕輕吹，薄料隨之起伏，像在跳一支獨舞。' },
+    { name: '玻璃瓶裡的枯枝', desc: '枯而不死，瓶中世界有它自己的美麗時序。' },
+    { name: '被雨淋濕的玻璃窗', desc: '外面世界模糊了，雨水讓一切變得夢幻難辨。' },
+    { name: '夕陽下的仙人掌', desc: '沙漠邊境，刺冠沐浴橙光，孤獨而自足。' },
+    { name: '戴著墨鏡的酷阿嬤', desc: '七十歲的時尚宣言，不需要任何解釋。' },
+    { name: '穿西裝的宇航員', desc: '最正式的太空人，無論在哪個星球都儀容整齊。' },
+    { name: '在雨中跳舞的影子', desc: '影子是真實的情感，沒有臉的自由。' },
+    { name: '一個破碎的時鐘', desc: '時間裂了，齒輪散落，再也不需要趕赴任何約定。' },
+    { name: '通往宇宙的門', desc: '門後是星系，你只需要敢於打開。' },
+    { name: '漂浮在空中的水滴', desc: '重力消失的瞬間，水滴成為最完美的球體。' },
+    { name: '一隻吐著泡泡的金魚', desc: '魚缸裡的小宇宙，每個泡泡是一個未說出口的願望。' },
+    { name: '疊滿書的木椅', desc: '知識的重量壓彎了椅背，但書香讓人心安。' },
+    { name: '半杯喝完的紅酒', desc: '玻璃杯壁留下的紅暈，是一段對話的最後印記。' },
+    { name: '手寫信和蠟封印', desc: '慢時代的誠意，每個字都是親手按下的溫度。' },
+    { name: '一把生鏽的鑰匙', desc: '不知道能開哪扇門，但必定指向某個秘密。' },
+    { name: '蓬鬆的白貓', desc: '擁有世界上最無辜眼神和最複雜算計的矛盾生物。' },
+    { name: '廚房裡沸騰的湯鍋', desc: '霧氣升騰，食物的香氣是家最溫暖的氣味。' },
+    { name: '陳舊的手風琴', desc: '每個琴鍵都是一個舊時代的記憶，拉開手風琴就拉開了時光。' },
+    { name: '一雙沾泥的球鞋', desc: '泥土不是骯髒，是冒險的勳章。' },
+    { name: '裝著星星的玻璃罐', desc: '把宇宙裝進玻璃瓶，放在床頭當夜燈。' },
+    { name: '一面碎裂的鏡子', desc: '每個碎片反映不同角度的你，哪一個才是真實的臉？' },
+    { name: '老式打字機', desc: '每一個字都敲出聲音，思考在機械節奏中落地。' },
+    { name: '漂流的熱氣球', desc: '藍天之上，沒有目的地，只有風決定去哪裡。' },
+    { name: '倒立生長的樹', desc: '根在天空，葉在地底，誰說樹只能這樣長？' },
+    { name: '一支點燃的蠟燭', desc: '光越燃越短，卻把黑暗照得更少了一分。' },
+    { name: '正在融化的冰淇淋', desc: '不完美才是它最美的瞬間，一切都是暫時的。' },
+    { name: '藏在帽子裡的兔子', desc: '等待被發現的驚喜，魔術師從未告訴你真相。' },
+    { name: '玻璃上的指紋', desc: '有人在這裡停留過，但你找不到他了。' },
+    { name: '一顆完美的番茄', desc: '日光、泥土、雨水的結晶，最樸實的完美。' },
+    { name: '手中握著的螢火蟲', desc: '微弱但存在，放在掌心的光是你自己選擇的溫柔。' },
+    { name: '一個空的鳥巢', desc: '已離開或尚未到來，巢本身是等待的形狀。' },
+    { name: '掉落的楓葉', desc: '下墜是它最後的飛翔，紅色是告別的顏色。' },
+    { name: '被風吹亂的地圖', desc: '目的地飛走了，也許這樣更好，迷路才能發現驚喜。' },
+    { name: '水面倒影裡的城市', desc: '倒置的世界和真實世界哪個更美？也許都是。' },
+    { name: '一雙對望的舊皮鞋', desc: '它們走了多遠，才能如此默契地停在此刻？' },
+    { name: '沾著顏料的雙手', desc: '創造的痕跡無法洗掉，也不需要洗掉。' },
+    { name: '正在孵蛋的企鵝', desc: '南極最暖的溫度，來自一個父親的肚皮。' },
+    { name: '包在報紙裡的花束', desc: '不講究包裝的浪漫，文字和花香混在一起。' },
+    { name: '廢棄游泳池裡的倒影', desc: '空池底部有天空，廢墟裡也能看見蒼穹。' },
+    { name: '一盆過度生長的植物', desc: '沒人修剪，它就長成自己想成為的樣子。' },
+    { name: '夜市的糖葫蘆串', desc: '紅通通的漿果裹上糖衣，是童年記憶裡最甜的光。' },
+    { name: '正在書寫的毛筆', desc: '墨在宣紙上暈開，每個字都有自己的呼吸節奏。' },
+    { name: '掛在牆上的舊地圖', desc: '地名已改，邊境已移，但記憶的地理從不更新。' },
+    { name: '一杯未完成的茶', desc: '茶漸涼，人已走，桌上還剩一圈茶漬的溫柔印記。' },
+    { name: '被遺忘的玩具士兵', desc: '角落裡的小小將軍，守護著已不存在的王國。' },
+  ],
+
+  // === 場景卡：50 組 ===
+  scene: [
+    { name: '巷弄裡的機車停車場', desc: '台灣日常裡最真實的生活切面，機車是這個城市的毛細血管。' },
+    { name: '充滿蒸氣的傳統市場', desc: '清晨霧氣裡，攤販和食物的香氣混成一片熱鬧的白煙。' },
+    { name: '下雨的捷運站月台', desc: '雨傘、滴水聲、等待的人群，城市的孤獨在此刻最明顯。' },
+    { name: '荒廢的沙漠戲院', desc: '銀幕生鏽、座椅被砂掩埋，但電影的夢還在風中飄。' },
+    { name: '蓋在雲端的咖啡館', desc: '雲霧穿過座位，你的咖啡杯裡也有一片天空。' },
+    { name: '充滿螢光植物的森林', desc: '夜間的原始森林發出藍綠螢光，不知是地球還是異星。' },
+    { name: '堆滿書的深夜書房', desc: '台燈昏黃，書頁泛舊，知識和靜謐共享同一個空間。' },
+    { name: '光影交錯的藝廊展間', desc: '天窗投下長方形光束，塵埃在光柱裡緩緩旋舞。' },
+    { name: '老舊的火車車廂內部', desc: '皮革座椅、窗外掠過的風景，時間在鐵軌上慢下來。' },
+    { name: '凌晨三點的便利商店', desc: '唯一的光源，深夜失眠者的避難所，永遠不打烊的溫暖。' },
+    { name: '被森林淹沒的廢棄校園', desc: '操場長出了樹，教室的黑板上全是苔蘚的筆跡。' },
+    { name: '夕陽落下的懸崖邊緣', desc: '風很大，世界在這裡到達了一個邊界，再走一步是虛空。' },
+    { name: '海底廢棄的圖書館', desc: '書頁在水中緩慢翻動，魚兒成了最後的讀者。' },
+    { name: '漂浮在水面的榻榻米', desc: '和風榻榻米漂在湖心，靜水微瀾是它的背景音樂。' },
+    { name: '正在下雪的地鐵入口', desc: '地下的暖氣遇上地面的雪，交界處是兩個世界的縫隙。' },
+    { name: '廢棄工廠的玻璃屋頂', desc: '鐵架鏽蝕，玻璃破碎，天光從碎縫中瀉入，美得觸目驚心。' },
+    { name: '摩天樓頂的空曠天台', desc: '城市從腳下蔓延，風聲是這裡唯一的鄰居。' },
+    { name: '霧中的竹林小徑', desc: '竹影婆娑，霧使一切邊界消失，你不確定自己走到了哪裡。' },
+    { name: '舊城區的理髮廳', desc: '旋轉燈柱、舊式鏡子、師傅的手穩定如山。' },
+    { name: '鹽田的黃昏', desc: '白色鹽晶倒映橙紅天空，平靜廣闊，美得過於真實。' },
+    { name: '旋轉木馬停止的夜晚', desc: '遊樂場歇業了，木馬停在半空中，像一個被暫停的夢。' },
+    { name: '颱風前夕的海岸', desc: '浪高天暗，鳥全消失了，自然界的預感比人類更準確。' },
+    { name: '骨董店的窗邊午後', desc: '陽光穿過積灰的老物件，每樣東西都帶著別人的故事。' },
+    { name: '山上廢棄的氣象站', desc: '雲就在窗外，儀器停止運轉，只剩風繼續記錄天氣。' },
+    { name: '午夜的空曠游泳池', desc: '池水反光在天花板上閃動，一個人的游泳是與自己對話。' },
+    { name: '高速公路的加油站', desc: '夜間的霓虹燈，每個停下來的人都在中途，都有未完的路。' },
+    { name: '廟會後的空廣場', desc: '燈籠殘骸、爆竹紙屑，熱鬧散去後的廣場有種安靜的哀愁。' },
+    { name: '大霧中的機場跑道', desc: '飛機輪廓若隱若現，起降的聲音從霧中傳來，方向感消失了。' },
+    { name: '溫室裡的熱帶植物叢', desc: '玻璃隔絕了外面的冬天，裡面是永遠的夏日赤道。' },
+    { name: '古城牆上的守夜', desc: '城牆延伸到視線盡頭，月光是唯一的路燈。' },
+    { name: '魚市場的清晨開場', desc: '還沒亮的天空下，冰桶和橡皮靴的世界熱鬧運轉。' },
+    { name: '醫院走廊的深夜', desc: '長長的白光走廊，一個人推著點滴架慢慢走，時間特別長。' },
+    { name: '科幻電影拍攝現場', desc: '綠幕、燈架、鏡頭後面的想像力比屏幕上的還巨大。' },
+    { name: '城市屋頂的廢棄水塔', desc: '爬上去能看見整座城市，但沒有人知道這裡的秘密。' },
+    { name: '山中茶園的晨霧', desc: '茶農彎腰採茶的身影隱入霧中，時光似乎靜止了幾百年。' },
+    { name: '停電後的市區', desc: '蠟燭和手電筒讓城市回到了某個更古老的夜晚。' },
+    { name: '海上燈塔的守燈室', desc: '旋轉的光每隔幾秒掃過一次，提醒海上的人你還在。' },
+    { name: '布市場的布料走廊', desc: '各色布匹從天花板垂下，走在裡面像穿越一道彩虹簾幕。' },
+    { name: '颶風後的寧靜沙灘', desc: '浪打上來的貝殼和海草，是大海重新整理過的禮物。' },
+    { name: '古老圖書館的密室', desc: '書架後面還有書架，最深處的書從沒有人翻閱過。' },
+    { name: '童話村莊的集市', desc: '彩色帳篷、手工物品、人群說的語言你似乎從未聽過。' },
+    { name: '蒸餾廠的銅製酒桶間', desc: '威士忌的香氣滲透在空氣裡，時間在這裡以年為單位。' },
+    { name: '巨型天文望遠鏡旁', desc: '指向宇宙深處，站在它旁邊讓人感受到人類的微小與勇敢。' },
+    { name: '歌舞伎町後巷的深夜', desc: '燈牌混雜、人影急促，繁華正面背後是這道灰色地帶。' },
+    { name: '河面上的浮橋市集', desc: '橋上有攤販，橋下是流水，交易在水面上輕輕晃動著進行。' },
+    { name: '南美洲的鹽湖鏡面', desc: '天空和大地融為一體，只有你的腳步聲提醒你仍在地面。' },
+    { name: '廢棄摩天輪的頂端', desc: '鏽蝕的纜線、城市全景，每次風吹都像最後一次搖晃。' },
+    { name: '深山中的廢棄溫泉旅館', desc: '榻榻米泛黃，泉水仍在流，人走了但溫度還沒散。' },
+    { name: '宇宙飛船艙壁的舷窗外', desc: '無邊的黑暗裡有幾顆星，那個距離讓思念變得沒有意義。' },
+    { name: '河堤上的塗鴉長廊', desc: '每個人的聲音都已上牆，走一段路就是讀一段城市的心聲。' },
+  ],
+
+  // === 挑戰任務：50 組 ===
+  challenge: [
+    { name: '手機桌布', desc: '畫面要乾淨，中間要有重點，讓你每天打開手機看到都很開心。' },
+    { name: '送給朋友的賀卡', desc: '畫面要讓人感覺到「溫暖、想說謝謝」，適合在上面手寫字。' },
+    { name: '咖啡廳小海報', desc: '要讓人一看就想走進去坐坐，氛圍感要拉滿。' },
+    { name: '電影預告封面', desc: '畫面要很有「懸念」，讓人想知道接下來發生什麼事。' },
+    { name: '個人頭像', desc: '要帥或要美，重點在主角的表情或特寫。' },
+    { name: '夢境紀錄', desc: '畫面越不可思議越好，要讓人覺得「這是在做夢吧？」' },
+    { name: '書籍封面設計', desc: '要在一瞬間傳達這本書的核心情緒，讓人想拿起來翻閱。' },
+    { name: '音樂專輯封面', desc: '要讓聽眾還沒按播放就已感受到這張專輯的整體氣氛。' },
+    { name: '品牌識別主視覺', desc: '要讓人一眼記住這個品牌是什麼感覺、代表什麼價值。' },
+    { name: '社群貼文封面圖', desc: '在滑動的人潮中停下來——這張圖要讓人忍不住點進去。' },
+    { name: '節日慶典宣傳海報', desc: '要傳遞出節慶的熱鬧與喜悅，讓人想立刻買票參加。' },
+    { name: '電商商品主圖', desc: '要讓商品看起來有質感、令人渴望擁有，第一眼就停住視線。' },
+    { name: '明信片設計', desc: '畫面要能承載一個地方的靈魂，讓收到的人想去那裡旅行。' },
+    { name: '雜誌跨頁插圖', desc: '配合文章情緒，成為讀者閱讀的情境加持，而非干擾。' },
+    { name: '展覽主視覺', desc: '要讓觀眾在門口就感受到這個展覽的核心概念與能量。' },
+    { name: '餐廳菜單封面', desc: '一翻開就要讓人食指大動，色調要讓食物看起來更美味。' },
+    { name: 'T恤印刷圖案', desc: '要能穿出去讓人問「這是在哪裡買的？」，圖案要耐看。' },
+    { name: '紋身設計草稿', desc: '要能永遠貼著皮膚，線條要有份量但又不過分複雜。' },
+    { name: '新年賀卡', desc: '傳遞新年的祝福，讓收到的人感覺到你花了心思在這上面。' },
+    { name: '公司年報封面', desc: '要專業但不無聊，讓股東和員工都感到驕傲。' },
+    { name: '婚禮請柬設計', desc: '要優雅浪漫，讓收到的人保留這張邀請卡捨不得丟。' },
+    { name: '電玩遊戲啟動畫面', desc: '玩家按下開始的一刻，就要完全被吸進這個世界。' },
+    { name: '環保倡議廣告', desc: '要讓人心裡一緊，但不絕望——驅動行動而非恐慌。' },
+    { name: '演唱會主視覺', desc: '一張圖要讓粉絲覺得這場演出值得等待了整整一年。' },
+    { name: '兒童繪本插頁', desc: '色彩要讓小孩愛不釋手，細節要讓大人一起看也樂在其中。' },
+    { name: '科技產品型錄頁', desc: '冷靜、精準、有未來感，讓科技看起來像藝術品。' },
+    { name: '健身房激勵海報', desc: '貼在牆上要讓人看完就想去做深蹲，能量要噴發出來。' },
+    { name: '心理諮商機構形象圖', desc: '要溫柔但不軟弱，讓有需要的人感到被接納與理解。' },
+    { name: 'NFT 數位藝術作品', desc: '要有收藏價值，讓人覺得擁有這張圖是一種身分象徵。' },
+    { name: '時裝週邀請函', desc: '要讓收到的人感覺自己是時尚圈的一份子，質感不容質疑。' },
+    { name: '電影院廁所廣告', desc: '只有幾秒鐘，讓在廁所的人記住你的訊息——難度超高。' },
+    { name: '機場巨型燈箱廣告', desc: '旅客帶著時差走過，要讓疲憊的眼睛仍然被這張圖抓住。' },
+    { name: '藝術書公仔外盒', desc: '外盒本身就要是藝術品，讓收藏家捨不得拆封。' },
+    { name: '喪禮追思卡', desc: '莊重而溫柔，讓悲傷的人感受到那個人留下的美好。' },
+    { name: '電子報頂部橫幅', desc: '訂閱者一打開信件就被吸引，點擊率要提升三倍。' },
+    { name: '播客封面圖', desc: '在一排播客中脫穎而出，讓人光看封面就猜到這個節目的調性。' },
+    { name: '限定版包裝設計', desc: '產品一樣，但這個包裝讓人多花兩百元也願意，因為太美了。' },
+    { name: '城市旅遊地圖封面', desc: '讓翻開地圖的人就已開始期待這座城市能給你什麼驚喜。' },
+    { name: '療癒系桌曆封面', desc: '全年三百六十五天都會看到，要讓人每次翻開都覺得被照顧。' },
+    { name: '哲學書摘視覺引言', desc: '一句話加上一張圖，讓人忍不住截圖存下來反覆思考。' },
+    { name: '農曆春節廟會布旗', desc: '掛在廟口迎風飄揚，要讓路過的人感受到文化的驕傲。' },
+    { name: '徵才廣告主視覺', desc: '要讓夢幻人才看到就想投履歷，感覺這家公司超有趣。' },
+    { name: '瑜珈教室氛圍圖', desc: '讓還沒去過的人透過圖像就感受到那個空間的平靜呼吸。' },
+    { name: '年度報告數據視覺化', desc: '讓枯燥的數字變成有靈魂的視覺故事，讓董事會印象深刻。' },
+    { name: '街頭快閃展裝置', desc: '路人經過五秒內要被吸引停下來，沒有說明書，自己感受。' },
+    { name: '萬聖節主題設計', desc: '要嚇人但也要有美感，讓成年人也覺得好玩不幼稚。' },
+    { name: '兒童教育 App 開場圖', desc: '要讓小孩第一眼就想點進去，顏色和角色都要充滿魔法。' },
+    { name: '個人品牌名片背面', desc: '留下的是一張卡，但拿到的人要記住的是你這個人的感覺。' },
+    { name: '慈善募款活動視覺', desc: '要讓人看了心軟，但不是用悲情——而是用美感和希望感化人。' },
+    { name: '滑板板面設計', desc: '板面就是一塊移動的藝術品，要讓人看到在路上滑過去都忍不住多看一眼。' },
+  ]
+};
+
+// ============================================================
+// 狀態管理
+// ============================================================
+let currentResults = { style: null, subject: null, scene: null, challenge: null };
+let hasDrawn = false; // 是否已抽過
+
+// ============================================================
+// 隨機取一張卡
+// ============================================================
+function randomCard(type) {
+  const pool = CARDS[type];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ============================================================
+// 全部抽籤
+// ============================================================
+function drawAllCards() {
+  hasDrawn = true;
+
+  // 抽取四種分類
+  currentResults.style     = randomCard('style');
+  currentResults.subject   = randomCard('subject');
+  currentResults.scene     = randomCard('scene');
+  currentResults.challenge = randomCard('challenge');
+
+  // 延遲顯示，依序動畫
+  const types = ['style', 'subject', 'scene', 'challenge'];
+  types.forEach((type, i) => {
+    setTimeout(() => renderCard(type, currentResults[type]), i * 120);
+  });
+
+  // 更新摘要
+  setTimeout(updateSummary, types.length * 120 + 200);
+
+  // 更換按鈕文字
+  const btn = document.getElementById('drawBtn');
+  btn.querySelector('span:last-child').textContent = '再抽一次';
+}
+
+// ============================================================
+// 重抽單張卡片
+// ============================================================
+function redrawCard(type) {
+  const newCard = randomCard(type);
+  currentResults[type] = newCard;
+  renderCard(type, newCard);
+  setTimeout(updateSummary, 300);
+}
+
+// ============================================================
+// 渲染單張卡片
+// ============================================================
+function renderCard(type, card) {
+  const cardEl    = document.getElementById('card-' + type);
+  const resultEl  = document.getElementById('result-' + type);
+  const descEl    = document.getElementById('desc-' + type);
+  const redrawEl  = document.getElementById('redraw-' + type);
+
+  // 動畫
+  cardEl.classList.remove('animating', 'visible');
+  void cardEl.offsetWidth; // reflow
+  cardEl.classList.add('animating', 'visible');
+
+  // 填入內容
+  resultEl.textContent = card.name;
+  resultEl.classList.remove('placeholder');
+  descEl.textContent = card.desc;
+  descEl.style.display = 'block';
+  redrawEl.style.display = 'flex';
+}
+
+// ============================================================
+// 更新組合摘要
+// ============================================================
+function updateSummary() {
+  const summaryEl = document.getElementById('resultSummary');
+  const textEl    = document.getElementById('summaryText');
+
+  if (!currentResults.style) return;
+
+  textEl.innerHTML =
+    '以 <strong>' + currentResults.style.name + '</strong> 的風格，' +
+    '描繪「<strong>' + currentResults.subject.name + '</strong>」，' +
+    '場景設定在「<strong>' + currentResults.scene.name + '</strong>」，' +
+    '創作一件 <strong>【' + currentResults.challenge.name + '】</strong>。';
+
+  summaryEl.classList.add('visible');
+}
+</script>
+
+</body>
+</html>
