@@ -5,366 +5,397 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>視覺基因產生器</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@700;900&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
   <style>
-    /* ===== CSS 變數 ===== */
     :root {
-      --bg: #f7f4ef;
-      --surface: #ffffff;
-      --border: #e8e2d9;
-      --text-primary: #1a1612;
-      --text-secondary: #6b6560;
-      --text-muted: #a09a93;
-      --accent: #c84b31;
-      --accent-light: #f5e8e5;
-      --style-color: #2d5a8e;
-      --style-bg: #edf2f8;
-      --subject-color: #3d7a5c;
-      --subject-bg: #edf5f1;
-      --scene-color: #7a4d8e;
-      --scene-bg: #f3edf8;
-      --challenge-color: #8e6b2d;
-      --challenge-bg: #f8f3ed;
-      --radius: 16px;
-      --radius-sm: 8px;
-      --shadow: 0 2px 20px rgba(0,0,0,0.06);
-      --shadow-hover: 0 8px 32px rgba(0,0,0,0.12);
-      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --black: #000000;
+      --off-black: #0a0a0a;
+      --surface: #111111;
+      --surface2: #181818;
+      --border: rgba(255,255,255,0.08);
+      --border-mid: rgba(255,255,255,0.14);
+      --white: #ffffff;
+      --off-white: #f0ede8;
+      --muted: rgba(255,255,255,0.38);
+      --mid: rgba(255,255,255,0.62);
+
+      /* card accent colours — kept subtle on dark bg */
+      --style-color: #7eb8d4;
+      --style-border: rgba(126,184,212,0.18);
+      --subject-color: #7dcba0;
+      --subject-border: rgba(125,203,160,0.18);
+      --scene-color: #b99dce;
+      --scene-border: rgba(185,157,206,0.18);
+      --challenge-color: #d4b07e;
+      --challenge-border: rgba(212,176,126,0.18);
     }
 
-    /* ===== Reset ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Noto Sans TC', sans-serif;
-      background: var(--bg);
-      color: var(--text-primary);
+      background: var(--black);
+      color: var(--white);
       min-height: 100vh;
-      padding: 24px 16px 64px;
-      /* 細緻的紋理背景 */
-      background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
-      background-size: 24px 24px;
+      padding: 0 0 80px;
     }
 
-    /* ===== 頁首 ===== */
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-      padding-top: 16px;
-    }
-
-    .header-tag {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.15em;
-      color: var(--accent);
-      text-transform: uppercase;
-      background: var(--accent-light);
-      padding: 4px 12px;
-      border-radius: 100px;
-      margin-bottom: 16px;
-    }
-
-    .header h1 {
-      font-family: 'Noto Serif TC', serif;
-      font-size: clamp(28px, 6vw, 48px);
-      font-weight: 700;
-      color: var(--text-primary);
-      line-height: 1.2;
-      letter-spacing: -0.01em;
-      margin-bottom: 12px;
-    }
-
-    .header p {
-      font-size: 15px;
-      color: var(--text-secondary);
-      line-height: 1.7;
-      max-width: 440px;
-      margin: 0 auto;
-    }
-
-    /* ===== 主容器 ===== */
-    .container {
-      max-width: 820px;
-      margin: 0 auto;
-    }
-
-    /* ===== 抽籤按鈕 ===== */
-    .draw-section {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .btn-draw {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--text-primary);
-      color: #fff;
-      border: none;
-      border-radius: 100px;
-      padding: 18px 40px;
-      font-family: 'Noto Sans TC', sans-serif;
-      font-size: 16px;
-      font-weight: 500;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-draw::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: var(--accent);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .btn-draw:hover::before { transform: scaleX(1); }
-    .btn-draw span { position: relative; z-index: 1; }
-
-    .btn-draw:hover {
-      box-shadow: 0 8px 24px rgba(200, 75, 49, 0.3);
-      transform: translateY(-2px);
-    }
-
-    .btn-draw:active { transform: translateY(0); }
-
-    /* 骰子圖示動畫 */
-    .btn-draw .icon {
-      position: relative;
-      z-index: 1;
-      font-size: 20px;
-      transition: transform 0.4s;
-    }
-    .btn-draw:hover .icon { transform: rotate(180deg) scale(1.2); }
-
-    /* ===== 卡片區塊 ===== */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    /* 每張卡片 */
-    .card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      border: 1.5px solid var(--border);
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      transition: var(--transition);
-      opacity: 0;
-      transform: translateY(20px);
-    }
-
-    .card.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .card:hover {
-      box-shadow: var(--shadow-hover);
-      transform: translateY(-4px);
-    }
-
-    /* 卡片頂部色條 */
-    .card-header {
-      padding: 16px 20px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1.5px solid var(--border);
-    }
-
-    .card-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+    /* ===== NAV ===== */
+    nav {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
 
+    /* ===== HEADER ===== */
+    .header {
+      text-align: center;
+      padding: 3rem 2rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .header-tag {
+      display: inline-block;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      padding: 0.3rem 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .header h1 {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(2rem, 5vw, 3.6rem);
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    .header h1 em { font-style: normal; color: var(--white); }
+    .header p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 2;
+      font-weight: 300;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    /* ===== MAIN CONTAINER ===== */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ===== DRAW BUTTON ===== */
+    .draw-section {
+      text-align: center;
+      padding: 2rem 0 1.8rem;
+    }
+    .btn-draw {
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      background: transparent;
+      color: var(--white);
+      border: 1px solid var(--border-mid);
+      padding: 0.85rem 2.4rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-draw::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--white);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    .btn-draw:hover::before { transform: scaleX(1); }
+    .btn-draw:hover { color: var(--black); }
+    .btn-draw span { position: relative; z-index: 1; }
+    .btn-draw .icon {
+      position: relative; z-index: 1;
+      font-size: 1rem;
+      transition: transform 0.4s;
+    }
+    .btn-draw:hover .icon { transform: rotate(180deg); }
+
+    /* ===== CARDS GRID ===== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s, transform 0.5s, box-shadow 0.3s, transform 0.3s;
+      position: relative;
+      background: #1a1a1a;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+
+    .card.visible { opacity: 1; transform: translateY(0); }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 36px rgba(0,0,0,0.55);
+    }
+    .card:hover .card-body { background: #ffffff; }
+
+    /* top accent line per category */
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      border-radius: 16px 16px 0 0;
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    .card:hover::before { transform: scaleX(1); }
+    .card--style::before   { background: var(--style-color); }
+    .card--subject::before { background: var(--subject-color); }
+    .card--scene::before   { background: var(--scene-color); }
+    .card--challenge::before { background: var(--challenge-color); }
+
+    .card-header {
+      padding: 1.2rem 1.4rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .card-icon {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
     .card-meta { flex: 1; }
     .card-type {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      font-weight: 400;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       margin-bottom: 2px;
     }
-    .card-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    /* 樣式卡 */
-    .card--style .card-header { background: var(--style-bg); }
-    .card--style .card-icon { background: rgba(45, 90, 142, 0.15); }
-    .card--style .card-type { color: var(--style-color); }
-
-    /* 主體卡 */
-    .card--subject .card-header { background: var(--subject-bg); }
-    .card--subject .card-icon { background: rgba(61, 122, 92, 0.15); }
+    .card--style .card-type   { color: var(--style-color); }
     .card--subject .card-type { color: var(--subject-color); }
-
-    /* 場景卡 */
-    .card--scene .card-header { background: var(--scene-bg); }
-    .card--scene .card-icon { background: rgba(122, 77, 142, 0.15); }
-    .card--scene .card-type { color: var(--scene-color); }
-
-    /* 挑戰任務 */
-    .card--challenge .card-header { background: var(--challenge-bg); }
-    .card--challenge .card-icon { background: rgba(142, 107, 45, 0.15); }
+    .card--scene .card-type   { color: var(--scene-color); }
     .card--challenge .card-type { color: var(--challenge-color); }
 
-    /* 卡片內容 */
-    .card-body { padding: 20px; }
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 300;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .card-body { padding: 1.4rem 1.4rem 1.2rem; background: #ffffff; border-radius: 0 0 16px 16px; }
 
     .card-result {
       font-family: 'Noto Serif TC', serif;
-      font-size: 20px;
+      font-size: 1.45rem;
       font-weight: 700;
-      line-height: 1.4;
-      color: var(--text-primary);
-      margin-bottom: 10px;
-      min-height: 56px;
+      line-height: 1.3;
+      color: #1a1612;
+      margin-bottom: 1rem;
+      min-height: 52px;
       display: flex;
+      align-items: flex-start;
+    }
+    .card-result.placeholder {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 300;
+      color: #a09a93;
+      font-style: normal;
+      letter-spacing: 0.04em;
       align-items: center;
     }
-
-    /* 佔位文字 */
-    .card-result.placeholder {
-      font-family: 'Noto Sans TC', sans-serif;
-      font-size: 14px;
-      font-weight: 400;
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
     .card-desc {
-      font-size: 12.5px;
-      color: var(--text-secondary);
-      line-height: 1.7;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
+      font-size: 0.81rem;
+      color: #6b6560;
+      line-height: 1.9;
+      padding-top: 1rem;
+      border-top: 1px solid #e8e2d9;
+      font-weight: 300;
     }
-
-    /* ===== 重抽單張按鈕 ===== */
     .card-redraw {
-      margin-top: 14px;
+      margin-top: 1.2rem;
       display: flex;
       justify-content: flex-end;
     }
-
     .btn-redraw {
-      font-family: 'Noto Sans TC', sans-serif;
-      font-size: 12px;
-      color: var(--text-muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      padding: 5px 14px;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-    .btn-redraw:hover {
-      color: var(--text-primary);
-      border-color: var(--text-primary);
-      background: var(--bg);
-    }
-
-    /* ===== 合併提示文字 ===== */
-    .result-summary {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      box-shadow: var(--shadow);
-      opacity: 0;
-      transition: opacity 0.5s 0.5s;
-    }
-
-    .result-summary.visible { opacity: 1; }
-
-    .summary-title {
-      font-size: 11px;
-      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 10px;
+      color: #a09a93;
+      background: none;
+      border: 1px solid #e8e2d9;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-redraw:hover {
+      color: #1a1612;
+      border-color: #1a1612;
+      background: #f7f4ef;
     }
 
+    /* ===== SUMMARY ===== */
+    .result-summary {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1.6rem 2rem;
+      margin-top: 14px;
+      opacity: 0;
+      transition: opacity 0.5s 0.4s;
+      position: relative;
+      background: #1a1a1a;
+    }
+    .result-summary::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-mid), transparent);
+    }
+    .result-summary.visible { opacity: 1; }
+    .summary-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
     .summary-text {
-      font-size: 15px;
-      color: var(--text-primary);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem;
+      font-weight: 300;
+      color: var(--mid);
       line-height: 1.8;
     }
+    .summary-text strong { color: var(--off-white); font-weight: 400; }
 
-    .summary-text strong { color: var(--accent); }
-
-    /* ===== Footer ===== */
-    footer {
+    /* ===== IG BAR ===== */
+    .ig-bar {
+      border-top: 1px solid var(--border);
+      padding: 1.2rem 2rem;
       text-align: center;
-      margin-top: 48px;
-      font-size: 12px;
-      color: var(--text-muted);
-      letter-spacing: 0.05em;
+    }
+    .ig-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      transition: color 0.2s, gap 0.2s;
+    }
+    .ig-link:hover { color: var(--white); gap: 1rem; }
+    .ig-link svg { transition: transform 0.2s; }
+    .ig-link:hover svg { transform: scale(1.15); }
+    .ig-arrow { transition: transform 0.2s; }
+    .ig-link:hover .ig-arrow { transform: translateX(4px); }
+
+    /* ===== FOOTER ===== */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.8rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+    .footer-logo {
+      width: 140px;
+      max-width: 45vw;
+      height: auto;
+      object-fit: contain;
+      opacity: 0.7;
+      display: block;
     }
 
-    /* ===== 洗牌動畫 ===== */
+    /* ===== FLIP ANIMATION ===== */
     @keyframes cardFlip {
-      0% { transform: rotateY(90deg) scale(0.9); opacity: 0; }
-      60% { transform: rotateY(-8deg); }
-      100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+      0%   { transform: rotateY(60deg) translateY(10px); opacity: 0; }
+      60%  { transform: rotateY(-4deg); }
+      100% { transform: rotateY(0deg) translateY(0); opacity: 1; }
     }
-
     .card.animating {
-      animation: cardFlip 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation: cardFlip 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
     }
 
-    /* ===== RWD ===== */
-    @media (max-width: 600px) {
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .header { padding: 3.5rem 1.5rem 2.5rem; }
+      .container { padding: 0 1.5rem; }
+      .draw-section { padding: 2.5rem 0 2rem; }
       .cards-grid { grid-template-columns: 1fr; }
-      .btn-draw { padding: 15px 30px; font-size: 15px; }
-      .card-result { font-size: 18px; }
+      .card { border-right: none; }
+      .card:nth-child(n+3) { border-bottom: 1px solid var(--border); }
+      .card:last-child { border-bottom: none; }
+      footer { flex-direction: column; gap: 1rem; padding: 1.5rem; }
     }
   </style>
 </head>
 <body>
 
+<!-- NAV -->
+<nav>
+  <span class="nav-title">Visual Gene Generator</span>
+</nav>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-tag">🎴 Creative Card Draw</div>
+  <h1>視覺基因<em>產生器</em></h1>
+  <p>隨機抽出四張創作基因卡，<br>讓靈感從未知的組合中誕生。</p>
+</header>
+
+<!-- DRAW BUTTON -->
 <div class="container">
-
-  <!-- 頁首 -->
-  <header class="header">
-    <div class="header-tag">🎴 Creative Card Draw</div>
-    <h1>視覺基因產生器</h1>
-    <p>隨機抽出四張創作基因卡，<br/>讓靈感從未知的組合中誕生。</p>
-  </header>
-
-  <!-- 抽籤區 -->
   <div class="draw-section">
     <button class="btn-draw" id="drawBtn" onclick="drawAllCards()">
-      <span class="icon">🎲</span>
+      <span class="icon">⬡</span>
       <span>開始抽籤</span>
     </button>
   </div>
 
-  <!-- 四張卡片 -->
+  <!-- CARDS -->
   <div class="cards-grid" id="cardsGrid">
 
-    <!-- 風格卡 -->
     <div class="card card--style" id="card-style">
       <div class="card-header">
         <div class="card-icon">🎨</div>
@@ -382,7 +413,6 @@
       </div>
     </div>
 
-    <!-- 主體卡 -->
     <div class="card card--subject" id="card-subject">
       <div class="card-header">
         <div class="card-icon">⭐</div>
@@ -400,7 +430,6 @@
       </div>
     </div>
 
-    <!-- 場景卡 -->
     <div class="card card--scene" id="card-scene">
       <div class="card-header">
         <div class="card-icon">🌆</div>
@@ -418,7 +447,6 @@
       </div>
     </div>
 
-    <!-- 挑戰任務 -->
     <div class="card card--challenge" id="card-challenge">
       <div class="card-header">
         <div class="card-icon">🎯</div>
@@ -438,24 +466,28 @@
 
   </div>
 
-  <!-- 組合摘要 -->
+  <!-- SUMMARY -->
   <div class="result-summary" id="resultSummary">
-    <div class="summary-title">📋 你的創作基因組合</div>
+    <div class="summary-title">— 你的創作基因組合</div>
     <div class="summary-text" id="summaryText">—</div>
   </div>
-
-  <footer>視覺基因產生器 · 每次都是全新的創作起點</footer>
-
 </div>
 
+<!-- INSTAGRAM LINK -->
+<div class="ig-bar">
+  <a href="https://www.instagram.com/io_nexus_designerslab/" target="_blank" rel="noopener" class="ig-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+    <span>@io_nexus_designerslab</span>
+    <span class="ig-arrow">→</span>
+  </a>
+</div>
+
+<footer>
+  <img src="logo-w.png" alt="I/O Nexus" class="footer-logo">
+</footer>
+
 <script>
-// ============================================================
-// 卡牌資料庫 — 每個分類各 50 組
-// ============================================================
-
 const CARDS = {
-
-  // === 風格卡：50 組 ===
   style: [
     { name: '台式美學', desc: '大膽的紅綠對比、霓虹燈管、磁磚拼貼，像《大佛普拉斯》那種生猛的黑白層次。' },
     { name: '港式復古', desc: '濃郁飽和度、窄巷老招牌，像王家衛《花樣年華》的煙霧繚繞感。' },
@@ -508,8 +540,6 @@ const CARDS = {
     { name: '老台灣懷舊', desc: '泛黃照片色調、眷村紅磚、黑膠唱片封面那個年代的溫柔。' },
     { name: '新媒體藝術', desc: '數位光場、感應互動的粒子流動、當代科技藝術的流體之美。' },
   ],
-
-  // === 主體卡：50 組 ===
   subject: [
     { name: '一杯冒煙的熱拿鐵', desc: '上班族必備儀式感，拿鐵拉花中倒映出整個早晨。' },
     { name: '一台打開的筆電', desc: '螢幕光映在臉上，深夜工作的孤獨與專注。' },
@@ -562,8 +592,6 @@ const CARDS = {
     { name: '一杯未完成的茶', desc: '茶漸涼，人已走，桌上還剩一圈茶漬的溫柔印記。' },
     { name: '被遺忘的玩具士兵', desc: '角落裡的小小將軍，守護著已不存在的王國。' },
   ],
-
-  // === 場景卡：50 組 ===
   scene: [
     { name: '巷弄裡的機車停車場', desc: '台灣日常裡最真實的生活切面，機車是這個城市的毛細血管。' },
     { name: '充滿蒸氣的傳統市場', desc: '清晨霧氣裡，攤販和食物的香氣混成一片熱鬧的白煙。' },
@@ -616,8 +644,6 @@ const CARDS = {
     { name: '宇宙飛船艙壁的舷窗外', desc: '無邊的黑暗裡有幾顆星，那個距離讓思念變得沒有意義。' },
     { name: '河堤上的塗鴉長廊', desc: '每個人的聲音都已上牆，走一段路就是讀一段城市的心聲。' },
   ],
-
-  // === 挑戰任務：50 組 ===
   challenge: [
     { name: '手機桌布', desc: '畫面要乾淨，中間要有重點，讓你每天打開手機看到都很開心。' },
     { name: '送給朋友的賀卡', desc: '畫面要讓人感覺到「溫暖、想說謝謝」，適合在上面手寫字。' },
@@ -672,71 +698,44 @@ const CARDS = {
   ]
 };
 
-// ============================================================
-// 狀態管理
-// ============================================================
 let currentResults = { style: null, subject: null, scene: null, challenge: null };
-let hasDrawn = false; // 是否已抽過
 
-// ============================================================
-// 隨機取一張卡
-// ============================================================
 function randomCard(type) {
   const pool = CARDS[type];
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-// ============================================================
-// 全部抽籤
-// ============================================================
 function drawAllCards() {
-  hasDrawn = true;
-
-  // 抽取四種分類
   currentResults.style     = randomCard('style');
   currentResults.subject   = randomCard('subject');
   currentResults.scene     = randomCard('scene');
   currentResults.challenge = randomCard('challenge');
 
-  // 延遲顯示，依序動畫
-  const types = ['style', 'subject', 'scene', 'challenge'];
-  types.forEach((type, i) => {
+  ['style','subject','scene','challenge'].forEach((type, i) => {
     setTimeout(() => renderCard(type, currentResults[type]), i * 120);
   });
+  setTimeout(updateSummary, 4 * 120 + 200);
 
-  // 更新摘要
-  setTimeout(updateSummary, types.length * 120 + 200);
-
-  // 更換按鈕文字
   const btn = document.getElementById('drawBtn');
   btn.querySelector('span:last-child').textContent = '再抽一次';
 }
 
-// ============================================================
-// 重抽單張卡片
-// ============================================================
 function redrawCard(type) {
-  const newCard = randomCard(type);
-  currentResults[type] = newCard;
-  renderCard(type, newCard);
+  currentResults[type] = randomCard(type);
+  renderCard(type, currentResults[type]);
   setTimeout(updateSummary, 300);
 }
 
-// ============================================================
-// 渲染單張卡片
-// ============================================================
 function renderCard(type, card) {
-  const cardEl    = document.getElementById('card-' + type);
-  const resultEl  = document.getElementById('result-' + type);
-  const descEl    = document.getElementById('desc-' + type);
-  const redrawEl  = document.getElementById('redraw-' + type);
+  const cardEl   = document.getElementById('card-' + type);
+  const resultEl = document.getElementById('result-' + type);
+  const descEl   = document.getElementById('desc-' + type);
+  const redrawEl = document.getElementById('redraw-' + type);
 
-  // 動畫
   cardEl.classList.remove('animating', 'visible');
-  void cardEl.offsetWidth; // reflow
+  void cardEl.offsetWidth;
   cardEl.classList.add('animating', 'visible');
 
-  // 填入內容
   resultEl.textContent = card.name;
   resultEl.classList.remove('placeholder');
   descEl.textContent = card.desc;
@@ -744,21 +743,15 @@ function renderCard(type, card) {
   redrawEl.style.display = 'flex';
 }
 
-// ============================================================
-// 更新組合摘要
-// ============================================================
 function updateSummary() {
   const summaryEl = document.getElementById('resultSummary');
   const textEl    = document.getElementById('summaryText');
-
   if (!currentResults.style) return;
-
   textEl.innerHTML =
     '以 <strong>' + currentResults.style.name + '</strong> 的風格，' +
     '描繪「<strong>' + currentResults.subject.name + '</strong>」，' +
     '場景設定在「<strong>' + currentResults.scene.name + '</strong>」，' +
     '創作一件 <strong>【' + currentResults.challenge.name + '】</strong>。';
-
   summaryEl.classList.add('visible');
 }
 </script>
